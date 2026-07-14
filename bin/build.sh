@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export -n $(env | cut -d= -f1 | grep -vE '^(PWD|SHLVL|_)')
+
 # echo $(realpath "$0")
 # if [ -f $(dirname $(realpath "$0"))/ZZ.version ]; then
 # 	if [ "x$(cat $(dirname $(realpath "$0"))/ZZ.version)" == "x1.0" ]; then
