@@ -398,10 +398,25 @@ do
 					echo "开始克隆..."
 					${BASE_DIR}/tools/git_clone.sh ${WORLD_PARM} -d "${NEW_BASE_DIR}/downloads/sources/files/" "${PKG_NAME}" "${PKG_VERSION}" "${URL}" "${PKG_GIT_BRANCH}" "${PKG_GIT_COMMIT}" "${PKG_GIT_SUBMODULE}" "${PKG_GIT_FORMAT}"
 					if [ "x$?" != "x0" ]; then
-						echo "${URL} 克隆失败！"
-						echo "克隆 ${URL} 失败！" >> ${NEW_BASE_DIR}/logs/download_fail.log
-						((FAIL_COUNT++))
-						continue;
+						REPLACE_REAL_URL=$(replace_url "${URL}" "${SAVE_FILENAME}")
+						if [ "${REPLACE_REAL_URL}" == "${URL}" ]; then
+							echo "${URL} 克隆失败！"
+							echo "克隆 ${URL} 失败！" >> ${NEW_BASE_DIR}/logs/download_fail.log
+							((FAIL_COUNT++))
+							continue;
+						else
+							if [ "x${EMU_BROWSER}" == "x" ]; then
+								wget --timeout=${DOWNLOAD_TIMEOUT} -c ${REPLACE_REAL_URL} -O ${NEW_BASE_DIR}/downloads/sources/files/${SAVE_FILENAME}
+							else
+								wget --timeout=${DOWNLOAD_TIMEOUT} -c ${REPLACE_REAL_URL} -O ${NEW_BASE_DIR}/downloads/sources/files/${SAVE_FILENAME} --no-check-certificate
+							fi
+							if [ "x$?" != "x0" ]; then
+								echo "${URL} 与 ${REPLACE_REAL_URL} 均下载失败！"
+								echo "下载 ${URL} ( 替换下载地址：${REPLACE_REAL_URL} ) 均下载失败！" >> logs/download_fail.log
+								((FAIL_COUNT++))
+								continue;
+							fi
+						fi
 					fi
 					if [ -f ${NEW_BASE_DIR}/downloads/sources/files/${PKG_NAME}-${PKG_VERSION}_git.tar.gz ]; then
 						echo "创建md5sum校验文件... ${NEW_BASE_DIR}/downloads/sources/hash/${PKG_NAME}-${PKG_VERSION}_git.tar.gz.hash"
@@ -439,10 +454,25 @@ do
 				echo ${BASE_DIR}/tools/git_clone.sh ${WORLD_PARM} -d "${NEW_BASE_DIR}/downloads/sources/files/" "${PKG_NAME}" "${PKG_VERSION}" "${URL}" "${PKG_GIT_BRANCH}" "${PKG_GIT_COMMIT}" "${PKG_GIT_SUBMODULE}" "${PKG_GIT_FORMAT}"
 				${BASE_DIR}/tools/git_clone.sh ${WORLD_PARM} -d "${NEW_BASE_DIR}/downloads/sources/files/" "${PKG_NAME}" "${PKG_VERSION}" "${URL}" "${PKG_GIT_BRANCH}" "${PKG_GIT_COMMIT}" "${PKG_GIT_SUBMODULE}" "${PKG_GIT_FORMAT}"
 				if [ "x$?" != "x0" ]; then
-					echo "${URL} 克隆失败！"
-					echo "克隆 ${URL} 失败！" >> ${NEW_BASE_DIR}/logs/download_fail.log
-					((FAIL_COUNT++))
-					continue;
+					REPLACE_REAL_URL=$(replace_url "${URL}" "${SAVE_FILENAME}")
+					if [ "${REPLACE_REAL_URL}" == "${URL}" ]; then
+						echo "${URL} 克隆失败！"
+						echo "克隆 ${URL} 失败！" >> ${NEW_BASE_DIR}/logs/download_fail.log
+						((FAIL_COUNT++))
+						continue;
+					else
+						if [ "x${EMU_BROWSER}" == "x" ]; then
+							wget --timeout=${DOWNLOAD_TIMEOUT} -c ${REPLACE_REAL_URL} -O ${NEW_BASE_DIR}/downloads/sources/files/${SAVE_FILENAME}
+						else
+							wget --timeout=${DOWNLOAD_TIMEOUT} -c ${REPLACE_REAL_URL} -O ${NEW_BASE_DIR}/downloads/sources/files/${SAVE_FILENAME} --no-check-certificate
+						fi
+						if [ "x$?" != "x0" ]; then
+							echo "${URL} 与 ${REPLACE_REAL_URL} 均下载失败！"
+							echo "下载 ${URL} ( 替换下载地址：${REPLACE_REAL_URL} ) 均下载失败！" >> logs/download_fail.log
+							((FAIL_COUNT++))
+							continue;
+						fi
+					fi
 				fi
 				if [ -f ${NEW_BASE_DIR}/downloads/sources/files/${PKG_NAME}-${PKG_VERSION}_git.tar.gz ]; then
 					echo "创建md5sum校验文件... ${NEW_BASE_DIR}/downloads/sources/hash/${PKG_NAME}-${PKG_VERSION}_git.tar.gz.hash"
