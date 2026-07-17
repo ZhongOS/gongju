@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-export -n $(env | cut -d= -f1 | grep -vE '^(PWD|SHLVL|_)')
+export -n $(env | cut -d= -f1 | grep -vE '^(PWD|TERM|SHLVL|_)')
 
 export BASE_DIR="${PWD}"
 export NEW_TARGET_SYSDIR="${BASE_DIR}/workbase"
