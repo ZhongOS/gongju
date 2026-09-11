@@ -121,14 +121,18 @@ pushd "${OUT_DIR}"/build/initramfs/ 2>&1 >/dev/null
 		if [ -f ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko.xz ]; then
 			cp -a ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko.xz lib/
 			unxz -d lib/$(echo ${i} | awk -F'/' '{ print $NF }').ko.xz
-		else
-			if [ -f ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko ]; then
-				cp -a ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko lib/
-			else
-				echo "找不到需要的内核模块 ${i}"
-				exit 1
-			fi
+			continue;
 		fi
+		if [ -f ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko.zst ]; then
+			cp -a ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko.zst lib/
+			unzst -d lib/$(echo ${i} | awk -F'/' '{ print $NF }').ko.zst
+			continue;
+		fi
+		if [ -f ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko ]; then
+			cp -a ${EXPORT_KERNEL_MODULE_DIR}/kernel/${i}.ko lib/
+			continue;
+		fi
+		echo "警告：找不到需要的内核模块 ${i}，可能该模块已编入内核，跳过。"
 	done
 	echo "${EXPORT_KERNEL_VERSION}" > ./uname_str.save
 	find . | cpio -H newc --create > ../initramfs.img
