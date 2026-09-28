@@ -2462,16 +2462,20 @@ do
 	export SET_OVERLAY_DIR=${SET_OVERLAY_DIR}
 #	echo "AUTO_SET_OVERLAY_DIR: ${AUTO_SET_OVERLAY_DIR}"
 
-	STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}${CROSSTOOLS_DIR_EXT}_${PACKAGE_INDEX}"
-	if [ "x${SET_OVERLAY_DIR}" != "x" ] && [ "x${AUTO_SET_OVERLAY_DIR}" == "x0" ]; then
-		STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${SET_OVERLAY_DIR}${CROSSTOOLS_DIR_EXT}_${PACKAGE_INDEX}"
-	else
-#		if [ "x${SET_OVERLAY_DIR}" != "x" ]; then
-#			STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${SET_OVERLAY_DIR}_${PACKAGE_INDEX}"
-#		fi
-		if [ "x${SET_OVERLAY_DIR}" != "x" ] && [ "x${AUTO_SET_OVERLAY_DIR}" != "x1" ]; then
+	if [ "x${ORIG_OVERLAY_DIR}" != "x" ]; then
+		STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}${CROSSTOOLS_DIR_EXT}_${PACKAGE_INDEX}"
+		if [ "x${SET_OVERLAY_DIR}" != "x" ] && [ "x${AUTO_SET_OVERLAY_DIR}" == "x0" ]; then
 			STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${SET_OVERLAY_DIR}${CROSSTOOLS_DIR_EXT}_${PACKAGE_INDEX}"
+		else
+#			if [ "x${SET_OVERLAY_DIR}" != "x" ]; then
+#				STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${SET_OVERLAY_DIR}_${PACKAGE_INDEX}"
+#			fi
+			if [ "x${SET_OVERLAY_DIR}" != "x" ] && [ "x${AUTO_SET_OVERLAY_DIR}" != "x1" ]; then
+				STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${SET_OVERLAY_DIR}${CROSSTOOLS_DIR_EXT}_${PACKAGE_INDEX}"
+			fi
 		fi
+	else
+		STATUS_FILE="${PACKAGE_NAME}${PACKAGE_SET_ENV}_${STEP_STAGE}_${PACKAGE_INDEX}"
 	fi
 
 	if [ "x${OPT_SET_VERSION_INDEX}" == "x" ]; then
@@ -2842,7 +2846,7 @@ if [ "x$?" == "x0" ]; then
 	cat ${NEW_TARGET_SYSDIR}/logs/info_pool
 	
 	if [ "x${1}" == "x" ]; then
-		echo "接下来可以使用 ./strip_os.sh $([[ "${SET_OVERLAY_DIR}" == "" ]] && echo "$([[ -d ${NEW_TARGET_SYSDIR}/overlaydir_strip ]] && echo "-f" || echo "")" || echo "-f ${SET_OVERLAY_DIR}") 脚本来清除调试信息，使用 ./install_os_run.sh 安装系统启动脚本，$([[ -f info_set/release_sort ]] && echo "使用 ./release_info.sh 来创建软件包信息汇总 ，" || echo "" )以及使用 ./pack_os.sh $([[ "${SET_OVERLAY_DIR}" == "" ]] && echo "$([[ -d ${NEW_TARGET_SYSDIR}/dist/os/squashfs ]] && echo "-f" || echo "")" || echo "-f ${SET_OVERLAY_DIR}") 脚本来打包系统。"
+		echo "接下来可以使用 ./strip_os.sh $([[ "${SET_OVERLAY_DIR}" == "" ]] && echo "$([[ -d ${NEW_TARGET_SYSDIR}/overlaydir_strip ]] && echo "-f" || echo "")" || echo "-f ${SET_OVERLAY_DIR}") 脚本来清除调试信息和文件分组，使用 ./install_os_run.sh 安装系统启动脚本，$([[ -f info_set/release_sort ]] && echo "使用 ./release_info.sh 来创建软件包信息汇总 ，" || echo "" )以及使用 ./pack_os.sh $([[ "${SET_OVERLAY_DIR}" == "" ]] && echo "$([[ -d ${NEW_TARGET_SYSDIR}/dist/os/squashfs ]] && echo "-f" || echo "")" || echo "-f ${SET_OVERLAY_DIR}") 脚本来打包系统。"
 	fi
 else
 	exit
