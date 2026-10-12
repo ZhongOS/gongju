@@ -2145,6 +2145,35 @@ function packagedir_to_pack
 	tools/pack_archive_dir.sh ${WORLD_PARM} -f -n "${4}-${5}.${6}"  ${1}/${2}.strip "${3}" "pkg" "${SINGLE_PACKAGE_TAR}"
 }
 
+function get_fit_error_info
+{
+	declare TRUE_ERROR_MESSAGE=""
+	declare GET_TRUE_ERROR_MESSAGE=""
+	declare TRUE_ERROR_FILE=""
+	if [ "x${1}" == "x" ]; then
+		echo "不能识别更详细的信息。"
+		return 0
+	fi
+	if [ ! -f ${1} ]; then
+		echo "指定的 ${1} 文件不存在。"
+		return 0
+	fi
+	TRUE_ERROR_MESSAGE="$(cat ${1})"
+	GET_TRUE_ERROR_MESSAGE=$(echo "${TRUE_ERROR_MESSAGE}" | grep "A full log can be found at")
+	if [ "x${GET_TRUE_ERROR_MESSAGE}" != "x" ]; then
+		TRUE_ERROR_FILE="$(echo "${TRUE_ERROR_MESSAGE}" | grep "MESON_CONFIG=" | grep -o -- "--cross-file[[:space:]]\+[^[:space:]\"']*" | awk -F' ' '{ print $2 }' | head -n 1)"
+		if [ -n "${TRUE_ERROR_FILE}" ] && [ -f "${TRUE_ERROR_FILE}" ]; then
+			cat ${TRUE_ERROR_FILE} | tail -n 300
+		fi
+		TRUE_ERROR_FILE="$(echo "${GET_TRUE_ERROR_MESSAGE}" | awk -F' ' '{ print $NF }' | head -n 1)"
+		if [ -n "${TRUE_ERROR_FILE}" ] && [ -f "${TRUE_ERROR_FILE}" ]; then
+			cat ${TRUE_ERROR_FILE} | tail -n 300
+		fi
+	fi
+	return 0
+}
+
+
 
 mkdir -p ${NEW_TARGET_SYSDIR}
 mkdir -p ${NEW_TARGET_SYSDIR}/temp
@@ -2682,6 +2711,7 @@ do
 				if [ "x${SHOW_ERROR_LOG}" == "x1" ]; then
 					echo "-------------错误日志------------------"
 					cat ${NEW_TARGET_SYSDIR}/logs/${STATUS_LOG_FILE}.log | tail -n300
+					get_fit_error_info ${NEW_TARGET_SYSDIR}/logs/${STATUS_LOG_FILE}.log
 					echo "----------------------------------------"
 					exit 0
 				else
