@@ -58,6 +58,7 @@ declare CROSSTOOLS_DIR_EXT=""
 declare BUILD_ERROR_LIMITE=1
 declare BUILD_ERROR_COUNT=1
 declare SHOW_ERROR_LOG=0
+declare USE_FUSE_OVERLAYFS=1
 
 while getopts 'fao:rgsP:de:xi:S:O:C:K:tpwclh' OPT; do
     case $OPT in
@@ -235,6 +236,10 @@ export BUILD_PACKAGE_CHECK=${BUILD_PACKAGE_CHECK}
 
 export YONGBAO_BUILD_UUID="$(date +%s%N)"
 # echo "YONGBAO_BUILD_UUID: ${YONGBAO_BUILD_UUID}"
+
+if [ ! -f /usr/bin/fuse-overlayfs ]; then
+	USE_FUSE_OVERLAYFS=0
+fi
 
 
 if [ "x${SINGLE_PACKAGE}" != "x1" ]; then
@@ -862,6 +867,26 @@ function fn_overlay_temp_fix_run
 	fi
 }
 
+function mount_command
+{
+	if [ "x${USE_FUSE_OVERLAYFS}" == "x1" ]; then
+		fuse-overlayfs $@
+	else
+		sudo mount -t overlay overlay $@
+	fi
+
+	if [ "x$?" != "x0" ]; then
+		if [ "x${USE_FUSE_OVERLAYFS}" == "x1" ]; then
+			echo "挂载命令无效: fuse-overlayfs $@ 。"
+		else
+			echo "挂载命令无效: sudo mount -t overlay overlay $@ 。"
+		fi
+		exit -2
+	fi
+	return 0
+}
+
+
 function overlay_mount
 {
 	declare LOWERDIR_LIST
@@ -1036,7 +1061,7 @@ function overlay_mount
 		mkdir -p ${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}
 		mkdir -p ${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change
 		sync
-		sudo mount -t overlay overlay -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+		mount_command -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 		if [ "x$?" != "x0" ]; then
 			echo "挂载sysroot错误！"
 			echo "sudo mount -t overlay overlay -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
@@ -1075,7 +1100,7 @@ function overlay_mount
 	        if ([ "x${OVERLAY_TEMP_FIX}" == "x1" ] && [ -f ${SCRIPTS_DIR}/step/${1}/overlay_temp_fix_run ]) || [ -f ${SCRIPTS_DIR}/step/${1}/${PACKAGE_NAME}.tempfix ]; then
 #		if [ "x${OVERLAY_TEMP_FIX}" == "x1" ] && [ -f ${SCRIPTS_DIR}/step/${1}/overlay_temp_fix_run ]; then
 # 			sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
-			sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+			mount_command -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 			if [ "x$?" != "x0" ]; then
 				echo "挂载sysroot错误！"
 # 				echo "sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
@@ -1084,7 +1109,7 @@ function overlay_mount
 			fi
 		else
 # 			sudo mount -t overlay overlay -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
-			sudo mount -t overlay overlay -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+			mount_command -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 			if [ "x$?" != "x0" ]; then
 				echo "挂载sysroot错误！"
 # 				echo "sudo mount -t overlay overlay -o index=off,lowerdir=${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/packages/${1}/${PACKAGE_NAME}${PACKAGE_SET_ENV}/${PACKAGE_VERSION}/DEST,workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
@@ -1115,7 +1140,7 @@ function overlay_mount
 #			fn_overlay_temp_fix_run "${1}"
 #			overlay_umount
 #			sync
-			sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+			mount_command -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 			if [ "x$?" != "x0" ]; then
 				echo "挂载sysroot错误！"
 				echo "sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME}.change:${USE_OVERLAY_DIR}${LOWERDIR_LIST},upperdir=${NEW_TARGET_SYSDIR}/temp/temp_overlay/${1}/${PACKAGE_NAME},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
@@ -1124,14 +1149,14 @@ function overlay_mount
 		else
 			USE_OVERLAY_DIR="${USE_OVERLAY_DIR:0:-1}"
 			if [ "x${OVERLAY_TEMP_FIX}" != "x2" ]; then  # 除了final_run之外的步骤
-				sudo mount -t overlay overlay -o index=off,lowerdir=${LOWERDIR_LIST},upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+				mount_command -o index=off,lowerdir=${LOWERDIR_LIST},upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 				if [ "x$?" != "x0" ]; then
 					echo "挂载sysroot错误！"
 					echo "sudo mount -t overlay overlay -o index=off,lowerdir=${LOWERDIR_LIST},upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
 					exit -2
 				fi
 			else  # final_run步骤
-				sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/overlaydir/.lowerdir,upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
+				mount_command -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/overlaydir/.lowerdir,upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot
 				if [ "x$?" != "x0" ]; then
 					echo "挂载sysroot错误！"
 					echo "sudo mount -t overlay overlay -o index=off,lowerdir=${NEW_TARGET_SYSDIR}/overlaydir/.lowerdir,upperdir=${USE_OVERLAY_DIR},workdir=${NEW_TARGET_SYSDIR}/overlaydir/.workerdir ${NEW_TARGET_SYSDIR}/sysroot"
