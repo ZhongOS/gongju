@@ -59,8 +59,9 @@ declare BUILD_ERROR_LIMITE=1
 declare BUILD_ERROR_COUNT=1
 declare SHOW_ERROR_LOG=0
 declare USE_FUSE_OVERLAYFS=1
+declare SET_BREAK_STEP_FOR_TIME=0
 
-while getopts 'fao:rgsP:de:xi:S:O:C:K:tpwclh' OPT; do
+while getopts 'fao:rgsP:de:xi:S:O:C:K:tpwclB:h' OPT; do
     case $OPT in
         f)
             FORCE_BUILD=1
@@ -162,6 +163,9 @@ while getopts 'fao:rgsP:de:xi:S:O:C:K:tpwclh' OPT; do
 	l)
 	    SHOW_ERROR_LOG=1
 	    ;;
+	B)
+	    SET_BREAK_STEP_FOR_TIME=$OPTARG
+	    ;;
         h|?)
             echo "目标系统构建命令。"
             echo ""
@@ -197,6 +201,7 @@ while getopts 'fao:rgsP:de:xi:S:O:C:K:tpwclh' OPT; do
 	    echo "        错误数: 1，出现错误步骤即立刻停止构建过程，显示相关的信息。"
 	    echo "        错误数: 2以上，指定错误步骤的上限，达到该限制时将立刻停止构建过程，并显示所有错误步骤。"
 	    echo "    -l: 显示错误日志内容，仅当错误数(-K)指定为 1 或不指定时有效。"
+	    echo "    -B <分钟>: 设置构建进行过程中的中断时间，当每个构建步骤开始前会测试已经进行的时间，如果超过该参数设置的分钟数，则停止构建过程，并返回0，若未设置该参数或参数设置为 0 表示不中断。"
             exit 127
     esac
 done
@@ -291,6 +296,34 @@ if [ "x${SINGLE_PACKAGE_TAR}" != "xnone" ] && [ "x${SINGLE_PACKAGE_TAR}" != "x" 
 			;;
 	esac
 fi
+
+declare YONGBAO_BUILD_TIMEOUT_START=0
+function start_timeout
+{
+	# 开始计时
+	YONGBAO_BUILD_TIMEOUT_START=$(date +%s)
+	echo "开始时间 $(date +%H:%M)"
+}
+
+function test_timeout
+{
+	declare TIMEOUT_END=0
+	if [ "x${SET_BREAK_STEP_FOR_TIME}" == "x0" ]; then
+		echo "0"
+		return
+	fi
+	# 获取当前时间
+	TIMEOUT_END=$(date +%s)
+	diff_sec=$((TIMEOUT_END - YONGBAO_BUILD_TIMEOUT_START))
+	# 分钟取整
+	diff_min=$((diff_sec / 60))
+	if [ "${diff_min}" -ge ${SET_BREAK_STEP_FOR_TIME} ]; then
+		echo "1"
+		return
+	fi
+	echo "0"
+	return
+}
 
 
 function set_build_env
@@ -2435,9 +2468,19 @@ if [ -f ${NEW_TARGET_SYSDIR}/logs/info_pool ]; then
 fi
 touch ${NEW_TARGET_SYSDIR}/logs/info_pool
 
+
+# 开始计时
+start_timeout
+
 # cat ${STEP_FILE} | awk -F'|' '{ print $1 }' | while read line
 cat ${STEP_FILE} | grep -v "^#" | while read line_all
 do
+	if [ "x$(test_timeout)" == "x1" ]; then
+		# 已超时
+		echo "制作过程用时超过设定时间，当前制作进度暂停，可再次运行继续制作。"
+		exit 0
+	fi
+
 	SET_PARENT_DIR="${USER_SET_PARENT_DIR}"
 	if [ "x${AUTO_SET_OVERLAY_DIR}" == "x1" ]; then
 		SET_OVERLAY_DIR=""
