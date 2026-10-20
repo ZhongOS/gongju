@@ -187,7 +187,8 @@ if [ ! -f ${DEST_DIR}/${PKG_NAME}${PKG_VERSION}_git.commit ]; then
 	echo "1"
 else
 	if [ "x${PKG_BRANCH}" != "x" ]; then
-		GET_GIT_COMMIT=$(git ls-remote ${PKG_URL} -b "${PKG_BRANCH}" | awk '{ print $1 }')
+# 		GET_GIT_COMMIT=$(git ls-remote ${PKG_URL} -b "${PKG_BRANCH}" | awk '{ print $1 }')
+		GET_GIT_COMMIT=$(git ls-remote ${PKG_URL} -b "refs/heads/${PKG_BRANCH}" | awk '{ print $1 }')
 	else
 		GET_GIT_COMMIT=$(git ls-remote ${PKG_URL} HEAD | awk '{ print $1 }')
 	fi
