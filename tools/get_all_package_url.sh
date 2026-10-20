@@ -596,7 +596,8 @@ ${i} 没有下载路径，请检查。"
 										rm -f ${NEW_BASE_DIR}/downloads/files/step/${i}/${PKG_VERSION}/files/${RESOURCES_FILENAME}
 									fi
 # 									wget --timeout=${DOWNLOAD_TIMEOUT} -c ${RESOURCES_URL} -O ${NEW_BASE_DIR}/downloads/files/step/${i}/${PKG_VERSION}/files/${RESOURCES_FILENAME}
-									REPLACE_REAL_RESOURCES_URL=$(replace_url "${RESOURCES_URL}" "${RESOURCES_FILENAME}")
+# 									REPLACE_REAL_RESOURCES_URL=$(replace_url "${RESOURCES_URL}" "${RESOURCES_FILENAME}")
+									REPLACE_REAL_RESOURCES_URL=$(replace_url "${RESOURCES_URL}" "${RESOURCES_URL##*/}")
 									wget --timeout=${DOWNLOAD_TIMEOUT} -c ${REPLACE_REAL_RESOURCES_URL} -O ${NEW_BASE_DIR}/downloads/files/step/${i}/${PKG_VERSION}/files/${RESOURCES_FILENAME}
 									if [ "x$?" != "x0" ]; then
 										if [ "${REPLACE_REAL_RESOURCES_URL}" == "${RESOURCES_URL}" ]; then
